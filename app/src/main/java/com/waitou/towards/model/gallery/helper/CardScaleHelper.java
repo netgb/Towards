@@ -3,6 +3,7 @@ package com.waitou.towards.model.gallery.helper;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -10,11 +11,6 @@ import com.to.aboomy.utils_lib.AlertToast;
 import com.to.aboomy.utils_lib.USize;
 import com.waitou.wt_library.kit.UImage;
 
-import java.util.concurrent.TimeUnit;
-
-import io.reactivex.Flowable;
-import io.reactivex.Observable;
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 
 import static com.waitou.wt_library.kit.UImage.scale;
@@ -70,8 +66,7 @@ public class CardScaleHelper {
         initWidth();
         mLinearSnapHelper.attachToRecyclerView(mRecyclerView);
         //第一次进入延迟调用 等待RecyclerView列表初始化完成
-        Disposable subscribe = Observable.timer(500, TimeUnit.MILLISECONDS, AndroidSchedulers.mainThread())
-                .subscribe(aLong -> notifyBackgroundChange());
+        mRecyclerView.postDelayed(this::notifyBackgroundChange, 500);
     }
 
     private void notifyBackgroundChange() {
@@ -80,13 +75,6 @@ public class CardScaleHelper {
         }
         mLastPos = getCurrentItemPos();
         startSwitchBackground();
-
-        //如果消费者无法处理数据，则 onBackpressureDrop 就把该数据丢弃了。
-        if (mSubscribe == null) {
-            mSubscribe = Flowable.interval(0, 1, TimeUnit.SECONDS, AndroidSchedulers.mainThread())
-                    .onBackpressureDrop() //如果消费者无法处理数据，则 onBackpressureDrop 就把该数据丢弃了。
-                    .subscribe(aLong -> mRecyclerView.smoothScrollToPosition(mCurrentItemPos++));
-        }
     }
 
     private View getPositionView() {
@@ -124,7 +112,7 @@ public class CardScaleHelper {
     private void initWidth() {
         mRecyclerView.post(() -> {
             mCardGalleryWidth = mRecyclerView.getWidth();
-            mCardWidth = mCardGalleryWidth - USize.dip2pxInt(2 * (mPagePadding + mShowLeftCardWidth));
+            mCardWidth = mCardGalleryWidth - USize.dip2pxInt( mPagePadding + mShowLeftCardWidth) * 2;
             mOnePageWidth = mCardWidth;
             notifyChangeWidth();
         });
@@ -154,6 +142,8 @@ public class CardScaleHelper {
         if (mOnePageWidth <= 0) return;
         boolean pageChanged = false;
         // 滑动超过一页说明已翻页
+
+        Log.e("aa" , "mCurrentItemOffset" + mCurrentItemOffset + "mCurrentItemPos " + mCurrentItemPos + " mOnePageWidth " + mOnePageWidth);
         if (Math.abs(mCurrentItemOffset - mCurrentItemPos * mOnePageWidth) >= mOnePageWidth) {
             pageChanged = true;
         }

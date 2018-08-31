@@ -6,8 +6,6 @@ import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.DisplayMetrics;
-import android.view.View;
 import android.view.ViewGroup;
 
 import java.util.List;
@@ -23,12 +21,6 @@ import io.reactivex.disposables.Disposable;
 public abstract class BaseFragment extends Fragment {
 
     private CompositeDisposable mCompositeDisposable;
-
-    /**
-     * 屏幕高宽 子类需复写 isScreenDisplayMetrics 进行获取
-     */
-    protected int mScreenHeight;
-    protected int mScreenWidth;
 
     /**
      * 控件是否初始化完毕
@@ -48,13 +40,6 @@ public abstract class BaseFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        if (isScreenDisplayMetrics()) {
-            DisplayMetrics displayMetrics = new DisplayMetrics();
-            getActivity().getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-            mScreenHeight = displayMetrics.heightPixels;
-            mScreenWidth = displayMetrics.widthPixels;
-        }
-
         //当前fragment可见
         if (getUserVisibleHint()) {
             //获取父fragment
@@ -110,13 +95,6 @@ public abstract class BaseFragment extends Fragment {
     }
 
     /**
-     * 是否获取屏幕高宽值 可选
-     */
-    protected boolean isScreenDisplayMetrics() {
-        return false;
-    }
-
-    /**
      * 向队列中添加一个 subscription
      */
     public void pend(Disposable disposable) {
@@ -128,12 +106,8 @@ public abstract class BaseFragment extends Fragment {
         }
     }
 
-    protected ViewDataBinding bindingInflate(@LayoutRes int resId, ViewGroup container) {
-        return DataBindingUtil.inflate(getActivity().getLayoutInflater(), resId, container, false);
-    }
-
-    protected View inflate(@LayoutRes int resId, ViewGroup container) {
-        return getActivity().getLayoutInflater().inflate(resId, container, false);
+    protected <D extends ViewDataBinding> D bindingInflate(@LayoutRes int resId, ViewGroup container) {
+        return DataBindingUtil.inflate(getLayoutInflater(), resId, container, container != null);
     }
 
     @Override

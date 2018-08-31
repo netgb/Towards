@@ -1,7 +1,12 @@
 package com.waitou.towards.model.main.fragment.home;
 
 import android.os.Bundle;
+import android.view.Gravity;
 
+import com.to.aboomy.banner.QyIndicator;
+import com.to.aboomy.theme_lib.ChangeModeController;
+import com.to.aboomy.theme_lib.config.ThemeUtils;
+import com.to.aboomy.utils_lib.AlertToast;
 import com.waitou.net_library.model.Displayable;
 import com.waitou.towards.R;
 import com.waitou.towards.bean.BannerAdapterInfo;
@@ -12,11 +17,11 @@ import com.waitou.towards.bean.HomeFunctionInfo;
 import com.waitou.towards.bean.RecyclerAdapterInfo;
 import com.waitou.towards.databinding.IncludeMatchRecyclerViewBinding;
 import com.waitou.wt_library.base.XFragment;
-import com.to.aboomy.utils_lib.AlertToast;
 import com.waitou.wt_library.recycler.LayoutManagerUtil;
 import com.waitou.wt_library.recycler.adapter.MultiTypeAdapter;
 import com.waitou.wt_library.recycler.adapter.SingleTypeAdapter;
-import com.waitou.wt_library.view.viewpager.SingleViewPagerAdapter;
+import com.waitou.wt_library.view.Indicator;
+import com.waitou.wt_library.view.SingleViewPagerAdapter;
 
 import java.util.List;
 
@@ -36,7 +41,7 @@ public class HomeCommendFragment extends XFragment<HomePresenter, IncludeMatchRe
     }
 
     @Override
-    public void initData(Bundle savedInstanceState) {
+    public void afterCreate(Bundle savedInstanceState) {
         mAdapter = new MultiTypeAdapter<>(getActivity());
         mAdapter.addViewTypeToLayoutMap(0, R.layout.item_banner);
         mAdapter.addViewTypeToLayoutMap(1, R.layout.item_wrap_recycler_view);
@@ -50,6 +55,7 @@ public class HomeCommendFragment extends XFragment<HomePresenter, IncludeMatchRe
 
     @Override
     protected void fragmentVisibleHint() {
+        showLoading();
         getP().loadHomeData();
     }
 
@@ -62,7 +68,11 @@ public class HomeCommendFragment extends XFragment<HomePresenter, IncludeMatchRe
     public void onBannerSuccess(List<BannerPageInfo> bannerPageInfo) {
         SingleViewPagerAdapter<BannerPageInfo> bannerAdapter = new SingleViewPagerAdapter<>(getActivity(), bannerPageInfo, R.layout.item_banner_image);
         bannerAdapter.setPresenter(getP());
-        mAdapter.add(0, new BannerAdapterInfo(bannerAdapter), 0);
+        QyIndicator qyIndicator = new Indicator(getActivity())
+                .setGravity(Gravity.CENTER)
+                .setIndicatorInColor(ThemeUtils.getThemeAttrColor(getActivity(), R.attr.colorPrimary));
+        ChangeModeController.get().addSkinView(qyIndicator);
+        mAdapter.add(0, new BannerAdapterInfo(bannerAdapter, qyIndicator), 0);
     }
 
     public void onFunctionSuccess(List<HomeFunctionInfo.FunctionInfo> homeFunctionInfo) {

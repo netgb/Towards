@@ -1,20 +1,15 @@
 package com.waitou.towards.model.activity;
 
-import android.graphics.Color;
 import android.os.Bundle;
-import android.os.SystemClock;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
 
+import com.to.aboomy.recycler_lib.Displayable;
+import com.to.aboomy.recycler_lib.QyRecyclerAdapter;
 import com.waitou.towards.R;
 import com.waitou.towards.databinding.ActivityRecommendedBinding;
 import com.waitou.wt_library.base.XActivity;
-import com.waitou.wt_library.recycler.LayoutManagerUtil;
-import com.waitou.wt_library.recycler.PullRecyclerView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,75 +21,66 @@ import java.util.List;
 
 public class RecommendedActivity extends XActivity<RecommendedPresenter, ActivityRecommendedBinding> implements RecommendedContract.RecommendedView {
 
-    List<String> list = new ArrayList<>();
-    private Adapter adapter;
+    public static final String EXTRA_LIST = "extra_list";
 
-    @Override
-    public void initData(Bundle savedInstanceState) {
-//        VirtualLayoutManager layoutManager = new VirtualLayoutManager(this);
-        getBinding().list.setLayoutManager(LayoutManagerUtil.getVerticalLayoutManager(this));
-        adapter = new Adapter();
-        getBinding().list.setAdapter(adapter);
-
-        getBinding().list.setOnRefreshAndLoadMoreListener(new PullRecyclerView.OnRefreshAndLoadMoreListener() {
-            @Override
-            public void onRefresh() {
-                new Thread(() -> {
-                    SystemClock.sleep(4000);
-                    runOnUiThread(() -> {
-                        for (int i = 0; i < 40; i++) {
-                            list.add("我是item = " + i);
-                        }
-                        adapter.addDataC(list);
-                    });
-                }).start();
-            }
-
-            @Override
-            public void onLoadMore(int page) {
-                Log.d("aa" , "  page = " + page);
-                new Thread(() -> {
-                    SystemClock.sleep(4000);
-                    add(10);
-                }).start();
-
-            }
-        });
-        showLoading();
-        reloadData();
-
-
-    }
+    List<Displayable> mMultiItemEntities = new ArrayList<>();
+    private QyRecyclerAdapter mBAdapter;
+    private RecyclerIntentVO  mRecyclerIntentVO;
 
     @Override
     public void reloadData() {
-        add(40);
     }
 
-    private void add(int b){
-        list.clear();
-        runOnUiThread(() -> {
-            for (int i = 0; i < b; i++) {
-                list.add("我是item = " + i);
-            }
-            adapter.addData(list);
-        });
-
-    }
 
     @Override
     public RecommendedPresenter createPresenter() {
         return new RecommendedPresenter();
     }
 
-    @Override
-    public boolean defaultXView() {
-        return true;
-    }
 
     @Override
     public int getContentViewId() {
         return R.layout.activity_recommended;
+    }
+
+    @Override
+    public void afterCreate(Bundle savedInstanceState) {
+        mRecyclerIntentVO = (RecyclerIntentVO) getIntent().getSerializableExtra(EXTRA_LIST);
+        mBAdapter = new QyRecyclerAdapter();
+        mBAdapter.addProvider(new TextItemProvider(), new SubmitProvider());
+        mBAdapter.setQyPresenter(new RecommendHelper());
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        getBinding().list.setLayoutManager(linearLayoutManager);
+        getBinding().list.setAdapter(mBAdapter);
+
+        TextBean textBean = new TextBean();
+        textBean.title = "手机号";
+        mMultiItemEntities.add(textBean);
+
+        TextBean textBean2 = new TextBean();
+        textBean2.title = "密码";
+        mMultiItemEntities.add(textBean2);
+
+        ItemButton itemButton = new ItemButton();
+        itemButton.buttonDes = "登陆";
+        mMultiItemEntities.add(itemButton);
+        mBAdapter.addData(mMultiItemEntities);
+
+        getBinding().list.post(new Runnable() {
+            @Override
+            public void run() {
+                RecyclerView.ViewHolder viewHolderForAdapterPosition = getBinding().list.findViewHolderForAdapterPosition(0);
+                int itemViewType = viewHolderForAdapterPosition.getItemViewType();
+                long itemId = viewHolderForAdapterPosition.getItemId();
+
+
+                Log.e("aa" ," itemviewtype = " + itemViewType);
+                Log.e("aa" ," itemId = " + itemId);
+
+
+            }
+        });
     }
 
 
@@ -111,45 +97,20 @@ public class RecommendedActivity extends XActivity<RecommendedPresenter, Activit
     }
 
 
-    private class Adapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    public RecyclerView.LayoutManager getLayoutManager() {
+        switch (mRecyclerIntentVO.recyclerLayoutManager) {
+            case 0:
 
-        List<String> list = new ArrayList<>();
+            case 1:
 
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            return new ViewHolder(new TextView(RecommendedActivity.this));
-        }
+            case 2:
 
-        @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            ((TextView) holder.itemView).setText(list.get(position) + "  ----  position " + position);
-        }
+            case 3:
 
-        @Override
-        public int getItemCount() {
-            return list == null ? 0 : list.size();
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            ViewHolder(View itemView) {
-                super(itemView);
-                TextView textView = (TextView) itemView;
-                textView.setTextColor(Color.BLACK);
-                textView.setGravity(Gravity.CENTER);
-            }
-        }
-
-
-        public void addData(List<String> list) {
-            this.list.addAll(list);
-            notifyDataSetChanged();
-        }
-
-        public void addDataC(List<String> list) {
-            this.list.clear();
-            this.list.addAll(list);
-            notifyDataSetChanged();
+            default:
+                LinearLayoutManager manager = new LinearLayoutManager(this);
+                manager.setOrientation(LinearLayoutManager.VERTICAL);
+                return manager;
         }
     }
-
 }
